@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Male Mean Obesity Rates</title>
+<link rel="stylesheet" type="text/css" href="timetunnel.css" media="screen" />
+
+</head>
+<body>
+<h1>Male Mean Obesity Rates by Country and Age Category from 1990 to 2013</h1>
+<script type="text/javascript" src="//d3js.org/d3.v3.min.js" charset="utf-8"></script>
+<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/d3-legend/1.10.0/d3-legend.js"></script>
+<script type="text/javascript">
+// read the data first. 
+// use d3.csv to read the data. 
+var width = 1000,
+    height = 1100,
+    startRadius = Math.min(width, height) / 8;
+	radius = startRadius;  
+var colors = ["#0F0F0F", "#6373FF", "#63A3FF", "#63E3FF", "#63FFFB", "#63FFCB",
+              "#63FF9B", "#63FF6B", "#808080", "#FFFFF0", "#FAFAD2", "#FBFF63", 
+              "#FFD363", "#FFB363", "#FF8363", "#FF7363", "#FF6364"];
+var pi = Math.PI; 
+var update = true; 
+var pie = d3.layout.pie()
+    	.sort(null)
+    	.value(function(d) { return d.mean; });
+    
+var ageSelection = "2 to 4 yrs"; // default value; 
+var dropdownLabel = d3.select("body").append("div").attr("id","controlDiv")
+					.append("text")
+					.attr("x", "15")
+					.attr("y", "20")
+					.attr("stroke", "black")
+					.text("Age Range:");
+var ageSelect = d3.select("#controlDiv")
+				.append("select")
+				.attr("id","ageDropDown")
+				// handle on click event
+  				.on('change', function() {
+    					var newAgeRange = d3.select(this).property('value'); 
+    					ageSelection = newAgeRange; 
+    					filterData(ageSelection, true);
+  				});
+
+var ageValues = d3.csv("./data/IHME_AGE_META_DATA.csv", function (rows) {
+			return {
+					ageId: +rows.age_group_id,
+					ageGroup: rows.age_group,
+					ageStart: +rows.age_start,
+					ageEnd: +rows.age_end
+					};
+			}, function (error, rows) {
+				var ageOptions = ageSelect.selectAll("option")
+								.data(rows)
+								.enter()
+								.append("option")
+								.text(function(d){return d.ageGroup;});
+// get the value from the dropdown 
+			ageSelection = ageSelect.node().value;  
+				filterData(ageSelection,true);
+			});
+
+
+var div = d3.select("body").append("div")	
+		  .attr("class", "tooltip")				
+		  .style("opacity", 0);
+
+var svg = d3.select("body").append("svg")
+    .attr("width", width)
+    .attr("height", height)
+    .attr("viewBox", "0 0 1200 1200")
+	.attr("preserveAspectRatio", "xMinYMin meet");
+	
+function zoomed() {
+	  svgg.attr("transform", "translate(" + d3.event.translate + ")scale(" + d3.event.scale + ")");
+	}	
+var zoom = d3.behavior.zoom()
+			.scaleExtent([1, 10])
+			.on("zoom", zoomed);
+			
+var svgg = svg    
+  		  .append("g")
+    	  .attr("transform", "translate(" + ((width / 2) + 200)+ "," + height / 2 + ")")
+    	  .call(zoom);
+  
+
+var dataFilter =[]
+// read the local file
+d3.csv("./data/IHME_GBD_DATA.csv", function(rows) {
+  // select a piece of the data only certain columns 
+  return {
+	  	locationName : rows.location_name,
+	  	year : rows.year,
+	  	ageGroupId : +rows.age_group_id,
+	  	ageGroup : rows.age_group,
+	  	gender : rows.sex,
+	  	metric : rows.metric,
+	  	mean : rows.mean
+  };  	
+  }, function(error, rows) {
+	//  console.log("rows are " + rows); 
+		 rows.forEach(function (d){ // not using filter here because I want to add some columns. 
+		  if (d.gender == "male" && d.metric == "obese"){ 
+			  var newRow = {}; 
+			  newRow.locationName = d.locationName;
+			  newRow.year = d.year;
+			  newRow.ageGroupId = d.ageGroupId;
+			  newRow.ageGroup = d.ageGroup;
+			  newRow.gender = d.gender;
+			  newRow.metric = d.metric;
+			  newRow.mean = d.mean; 
+			  newRow.ringRadius = 15*(+d.year-1990) + startRadius;
+			  newRow.ring = d.year-1990;
+			  dataFilter.push(newRow); 
+		  };
+		 }); 
+		 filterData(ageSelection, false); // get the dynamic part working. 
+ 
+});
+
+ function filterData(ageSelection, update)
+ {
+	 var dataFilterAge = dataFilter.filter( function(el){
+		 return (typeof el.ageGroup != "undefined" && el.ageGroup == ageSelection);
+	 }); 
+	 updateView(dataFilterAge,update); // update the view 
+ }
+function updateView (dataFilterAge, update){
+	 var dataFilterAge = dataFilter.filter( function(el){
+		 return (typeof el.ageGroup != "undefined" && el.ageGroup == ageSelection);
+	 }); 
+	// calculate some stats 
+	var dataMin = d3.min(dataFilterAge,function(d){ return d.mean});
+	var dataMax = d3.max(dataFilterAge, function(d){ return d.mean});
+	var dataMean = d3.mean(dataFilterAge, function(d){ return d.mean});
+	var yearMin = d3.min(dataFilterAge,function(d){ return d.year});
+	var yearMax = d3.max(dataFilterAge, function(d){ return d.year}); 
+	var ringMax = d3.max(dataFilterAge, function(d){return d.ring});
+
+ 
+	// check for bad data on start up 
+	if(typeof dataMean == "undefined") dataMean = 0.0; 
+	if(typeof dataMax == "undefined") dataMax = 0.0; 
+	// create a color mapping
+	var colorDomain = createColorArray(dataMean, dataMax); 
+	// create labels for the legend function. 
+	var colorLabels = createLegendLabels(dataMean,dataMax); 
+
+	// create a heatmap-like color scale
+	var heatmapColor1 = d3.scale.threshold()
+					.domain(colorDomain)
+					.range(colors); 
+
+	var arc = d3.svg.arc()
+		.outerRadius(function(d){if(typeof d.data != 'undefined') return d.data.ringRadius - 10})
+		.innerRadius(function(d){if(typeof d.data != 'undefined')return d.data.ringRadius - 25})
+		.startAngle(function(d,i){
+			return Math.floor(i/(ringMax+1))*(2*pi)/(dataFilterAge.length/(ringMax+1)); })
+		.endAngle(function(d,i){ 
+							return Math.floor(i/(ringMax+1))*(2*pi)/(dataFilterAge.length/(ringMax+1)) + (2*pi)/(dataFilterAge.length/(ringMax+1));});  
+	// redraw 
+	if(update){ 
+		svgg.selectAll(".arc").remove(); 
+		svg.select(".legendLinear").remove();
+	}
+	var g = svgg.selectAll(".arc")
+	  		.data(pie(dataFilterAge));
+	  	
+	var gg =   g.enter().append("g")
+	  		.attr("class", "arc");
+			
+	gg.append("path")
+	  .attr("d", arc)
+	  .style("fill", function(d) {return heatmapColor1(d.data.mean)})
+	  .on("mouseover", function(d) {	// tool tip 	
+	        div.transition()		
+	            .duration(200)		
+	            .style("opacity", .9);		
+	        div	.html(d.data.locationName + "<br/>"  + d.data.year + "<br/>" + d.data.mean)	
+	            .style("left", (d3.event.pageX) + "px")		
+	            .style("top", (d3.event.pageY - 28) + "px");	
+	        })					
+	    .on("mouseout", function(d) {		
+	        div.transition()		
+	            .duration(500)		
+	            .style("opacity", 0);	
+	    });
+	gg.append("text")
+		.attr("transform", function(d,i) {
+			d.outerRadius = (ringMax+1)*30;
+			d.innerRadius = (ringMax+1)*30;
+			
+			return "translate(" + arc.centroid(d,i) + ")rotate(" + angle(d) + ")";; })
+		.attr("dy", ".35em")
+		.attr("text-anchor", function(d,i){if(i<2522) return "start"; else return "end";}) 
+		.text(function(d,i) {if(d.data.ring == ringMax) return d.data.locationName; else return ""; });
+	// remove old data 
+	g.exit().remove(); 
+	
+	//add a quick legend using an imported d3 api. 
+	svg.append("g")
+		.attr("class", "legendLinear")
+		.attr("transform", "translate(20,20)");
+	if(dataMean !== 0){
+		var legendLinear = d3.legend.color()
+			.shapeWidth(30)
+			.cells(heatmapColor1.domain())
+			.orient('vertical')
+			.labelFormat(d3.format(".03f"))
+			.title("Male Mean Obesity Rate:" + yearMin + " (Inner Ring) to " + yearMax + " (OuterRing)")
+			.labels(colorLabels)
+			.scale(heatmapColor1);
+	
+			svg.select(".legendLinear")
+				.call(legendLinear);
+	}
+
+//Computes the angle of an arc, converting from radians to degrees.
+function angle(d) {
+	var a = (d.startAngle + d.endAngle) * 90 / Math.PI - 90;
+	return a > 90 ? a - 180 : a;
+	}   
+
+function createColorArray(dataMean,dataMax){
+	var colorArray = [];
+	for(var i = 0; i<9;i++)
+	{
+		colorArray.push(i*dataMean/8);	
+	}
+	for(var j=1;j<8;j++)
+	{
+		colorArray.push(dataMean + (j*((dataMax-dataMean)/8)));	
+	}
+	colorArray.push((+dataMax + 0.001));
+	return colorArray; 
+	
+	}
+function createLegendLabels(dataMean, dataMax){
+	var colorLabels = ["0.0"];
+	dataMeanFraction = dataMean/8; 
+	for(var i=0;i<7;i++)
+	{
+		colorLabels.push((i*dataMeanFraction).toFixed(3) + " to " + ((i+1)*dataMeanFraction).toFixed(3))	
+	}
+	colorLabels.push((7*dataMeanFraction).toFixed(3) + " to Mean(" + dataMean.toFixed(3) +")"); 
+	colorLabels.push("Mean(" + dataMean.toFixed(3) + ") to " + (dataMean + ((dataMax-dataMean)/8)).toFixed(3));
+	for (var j = 1;j<7;j++){
+		colorLabels.push((dataMean +((j*(dataMax-dataMean))/8)).toFixed(3) + " to " + (dataMean + ((j+1)*(dataMax-dataMean)/8)).toFixed(3));
+	}
+	colorLabels.push( (dataMean + (7*(dataMax-dataMean)/8)).toFixed(3) + " to " + "Max(" + dataMax + ")"); 
+
+	return colorLabels; 
+	}
+
+}
+</script>
+</body>
+</html>
