@@ -200,10 +200,10 @@ function updateView (dataFilterAge, update){
 	
 	//add a quick legend using an imported d3 api. 
 	svg.append("g")
-		.attr("class", "legendLinear")
+		.attr("class", "legendThreshold")
 		.attr("transform", "translate(20,20)");
 	if(dataMean !== 0){
-		var legendLinear = d3.legend.color()
+		var legendThreshold = d3.legend.color()
 			.shapeWidth(25)
 			.cells(heatmapColor1.domain())
 			.orient('vertical')
@@ -212,8 +212,8 @@ function updateView (dataFilterAge, update){
 			.labels(colorLabels)
 			.scale(heatmapColor1);
 	
-			svg.select(".legendLinear")
-				.call(legendLinear);
+			svg.select(".legendThreshold")
+				.call(legendThreshold);
 	}
 
 //Computes the angle of an arc, converting from radians to degrees.
