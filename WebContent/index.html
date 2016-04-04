@@ -13,7 +13,8 @@
 <script type="text/javascript">
 // read the data first. 
 // use d3.csv to read the data. 
-var width = 1000,
+(function runVis(){
+var width = 950,
     height = 1100,
     startRadius = Math.min(width, height) / 8;
 	radius = startRadius;  
@@ -29,8 +30,8 @@ var pie = d3.layout.pie()
 var ageSelection = "2 to 4 yrs"; // default value; 
 var dropdownLabel = d3.select("body").append("div").attr("id","controlDiv")
 					.append("text")
-					.attr("x", "15")
-					.attr("y", "20")
+					.attr("x", "2ch")
+					.attr("y", "2em")
 					.attr("stroke", "black")
 					.text("Age Range:");
 var ageSelect = d3.select("#controlDiv")
@@ -55,9 +56,9 @@ var ageValues = d3.csv("./data/IHME_AGE_META_DATA.csv", function (rows) {
 								.data(rows)
 								.enter()
 								.append("option")
-								.text(function(d){return d.ageGroup;});
+								.text(function(d){ return d.ageGroup;});
 // get the value from the dropdown 
-			ageSelection = ageSelect.node().value;  
+				ageSelection = ageSelect.node().value;  
 				filterData(ageSelection,true);
 			});
 
@@ -67,21 +68,21 @@ var div = d3.select("body").append("div")
 		  .style("opacity", 0);
 
 var svg = d3.select("body").append("svg")
-    .attr("width", width)
-    .attr("height", height)
-    .attr("viewBox", "0 0 1200 1200")
-	.attr("preserveAspectRatio", "xMinYMin meet");
+    		.attr("width", '100%')
+    		.attr("height", '100%')
+    		.attr("viewBox", "0 0 1200 1200")
+			.attr("preserveAspectRatio", "xMinYMin meet");
 	
 function zoomed() {
 	  svgg.attr("transform", "translate(" + d3.event.translate + ")scale(" + d3.event.scale + ")");
 	}	
 var zoom = d3.behavior.zoom()
-			.scaleExtent([1, 10])
-			.on("zoom", zoomed);
+			 .scaleExtent([1, 10])
+			 .on("zoom", zoomed);
 			
 var svgg = svg    
   		  .append("g")
-    	  .attr("transform", "translate(" + ((width / 2) + 200)+ "," + height / 2 + ")")
+    	  .attr("transform", "translate(" + (( width / 2) + 150)+ "," + height / 2 + ")")
     	  .call(zoom);
   
 
@@ -99,7 +100,6 @@ d3.csv("./data/IHME_GBD_DATA.csv", function(rows) {
 	  	mean : rows.mean
   };  	
   }, function(error, rows) {
-	//  console.log("rows are " + rows); 
 		 rows.forEach(function (d){ // not using filter here because I want to add some columns. 
 		  if (d.gender == "male" && d.metric == "obese"){ 
 			  var newRow = {}; 
@@ -110,8 +110,8 @@ d3.csv("./data/IHME_GBD_DATA.csv", function(rows) {
 			  newRow.gender = d.gender;
 			  newRow.metric = d.metric;
 			  newRow.mean = d.mean; 
-			  newRow.ringRadius = 15*(+d.year-1990) + startRadius;
-			  newRow.ring = d.year-1990;
+			  newRow.ringRadius = 15 * (+d.year-1990) + startRadius;
+			  newRow.ring = d.year - 1990;
 			  dataFilter.push(newRow); 
 		  };
 		 }); 
@@ -127,9 +127,7 @@ d3.csv("./data/IHME_GBD_DATA.csv", function(rows) {
 	 updateView(dataFilterAge,update); // update the view 
  }
 function updateView (dataFilterAge, update){
-	 var dataFilterAge = dataFilter.filter( function(el){
-		 return (typeof el.ageGroup != "undefined" && el.ageGroup == ageSelection);
-	 }); 
+
 	// calculate some stats 
 	var dataMin = d3.min(dataFilterAge,function(d){ return d.mean});
 	var dataMax = d3.max(dataFilterAge, function(d){ return d.mean});
@@ -167,7 +165,7 @@ function updateView (dataFilterAge, update){
 	var g = svgg.selectAll(".arc")
 	  		.data(pie(dataFilterAge));
 	  	
-	var gg =   g.enter().append("g")
+	var gg = g.enter().append("g")
 	  		.attr("class", "arc");
 			
 	gg.append("path")
@@ -188,12 +186,14 @@ function updateView (dataFilterAge, update){
 	    });
 	gg.append("text")
 		.attr("transform", function(d,i) {
-			d.outerRadius = (ringMax+1)*30;
-			d.innerRadius = (ringMax+1)*30;
-			
-			return "translate(" + arc.centroid(d,i) + ")rotate(" + angle(d) + ")";; })
+			d.outerRadius = (ringMax+1) * 30;
+			d.innerRadius = (ringMax+1) * 30;
+			return "translate(" + arc.centroid(d,i) + ")rotate(" + angle(d) + ")";; 
+		})
 		.attr("dy", ".35em")
-		.attr("text-anchor", function(d,i){if(i<2522) return "start"; else return "end";}) 
+		// hack for this data set to get the labels to look right.
+		// need to figure out how the angle is related to the text-anchor. No obvious pattern 
+		.attr("text-anchor", function(d,i){if(i < 2522) return "start"; else return "end";}) 
 		.text(function(d,i) {if(d.data.ring == ringMax) return d.data.locationName; else return ""; });
 	// remove old data 
 	g.exit().remove(); 
@@ -204,7 +204,7 @@ function updateView (dataFilterAge, update){
 		.attr("transform", "translate(20,20)");
 	if(dataMean !== 0){
 		var legendLinear = d3.legend.color()
-			.shapeWidth(30)
+			.shapeWidth(25)
 			.cells(heatmapColor1.domain())
 			.orient('vertical')
 			.labelFormat(d3.format(".03f"))
@@ -224,13 +224,13 @@ function angle(d) {
 
 function createColorArray(dataMean,dataMax){
 	var colorArray = [];
-	for(var i = 0; i<9;i++)
+	for(var i = 0; i < 9; i++)
 	{
-		colorArray.push(i*dataMean/8);	
+		colorArray.push(i * dataMean / 8);	
 	}
-	for(var j=1;j<8;j++)
+	for(var j = 1; j < 8; j++)
 	{
-		colorArray.push(dataMean + (j*((dataMax-dataMean)/8)));	
+		colorArray.push(dataMean + (j * ((dataMax - dataMean) / 8)));	
 	}
 	colorArray.push((+dataMax + 0.001));
 	return colorArray; 
@@ -238,22 +238,23 @@ function createColorArray(dataMean,dataMax){
 	}
 function createLegendLabels(dataMean, dataMax){
 	var colorLabels = ["0.0"];
-	dataMeanFraction = dataMean/8; 
-	for(var i=0;i<7;i++)
+	dataMeanFraction = dataMean / 8; 
+	for(var i = 0; i < 7; i++)
 	{
 		colorLabels.push((i*dataMeanFraction).toFixed(3) + " to " + ((i+1)*dataMeanFraction).toFixed(3))	
 	}
 	colorLabels.push((7*dataMeanFraction).toFixed(3) + " to Mean(" + dataMean.toFixed(3) +")"); 
 	colorLabels.push("Mean(" + dataMean.toFixed(3) + ") to " + (dataMean + ((dataMax-dataMean)/8)).toFixed(3));
-	for (var j = 1;j<7;j++){
-		colorLabels.push((dataMean +((j*(dataMax-dataMean))/8)).toFixed(3) + " to " + (dataMean + ((j+1)*(dataMax-dataMean)/8)).toFixed(3));
+	for (var j = 1; j < 7; j++){
+		colorLabels.push((dataMean +((j * (dataMax - dataMean)) / 8)).toFixed(3) + " to " + (dataMean + ((j + 1) * (dataMax - dataMean) / 8)).toFixed(3));
 	}
-	colorLabels.push( (dataMean + (7*(dataMax-dataMean)/8)).toFixed(3) + " to " + "Max(" + dataMax + ")"); 
+	colorLabels.push( (dataMean + (7 * (dataMax - dataMean) / 8)).toFixed(3) + " to " + "Max(" + dataMax + ")"); 
 
 	return colorLabels; 
 	}
 
 }
+}()); // enclose it and call it to prevent collisions
 </script>
 </body>
 </html>

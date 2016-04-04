@@ -1,7 +1,7 @@
 @CHARSET "UTF-8";
 .arc text {
   font: 10px sans-serif;
-
+  
 }
 
 .arc path {
@@ -23,3 +23,10 @@ div.tooltip {
 h1 {
 	text-align:center;
 	}
+body {
+	font: 13px sans-serif;
+}
+text {
+	padding-left:1em;
+	padding-right:1em;
+}
