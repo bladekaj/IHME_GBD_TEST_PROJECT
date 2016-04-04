@@ -68,8 +68,8 @@ var div = d3.select("body").append("div")
 		  .style("opacity", 0);
 
 var svg = d3.select("body").append("svg")
-    		.attr("width", '100%')
-    		.attr("height", '100%')
+    		.attr("width", '90%')
+    		.attr("height", '90%')
     		.attr("viewBox", "0 0 1200 1200")
 			.attr("preserveAspectRatio", "xMinYMin meet");
 	
@@ -82,7 +82,7 @@ var zoom = d3.behavior.zoom()
 			
 var svgg = svg    
   		  .append("g")
-    	  .attr("transform", "translate(" + (( width / 2) + 150)+ "," + height / 2 + ")")
+    	  .attr("transform", "translate(" + (( width / 2) + 170)+ "," + height / 2 + ")")
     	  .call(zoom);
   
 
