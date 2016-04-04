@@ -101,7 +101,7 @@ d3.csv("./data/IHME_GBD_DATA.csv", function(rows) {
   };  	
   }, function(error, rows) {
 		 rows.forEach(function (d){ // not using filter here because I want to add some columns. 
-		  if (d.gender == "male" && d.metric == "obese"){ 
+		  if (d.gender === "male" && d.metric === "obese"){ 
 			  var newRow = {}; 
 			  newRow.locationName = d.locationName;
 			  newRow.year = d.year;
@@ -122,7 +122,7 @@ d3.csv("./data/IHME_GBD_DATA.csv", function(rows) {
  function filterData(ageSelection, update)
  {
 	 var dataFilterAge = dataFilter.filter( function(el){
-		 return (typeof el.ageGroup != "undefined" && el.ageGroup == ageSelection);
+		 return (typeof el.ageGroup !== "undefined" && el.ageGroup === ageSelection);
 	 }); 
 	 updateView(dataFilterAge,update); // update the view 
  }
@@ -138,8 +138,8 @@ function updateView (dataFilterAge, update){
 
  
 	// check for bad data on start up 
-	if(typeof dataMean == "undefined") dataMean = 0.0; 
-	if(typeof dataMax == "undefined") dataMax = 0.0; 
+	if(typeof dataMean === "undefined") dataMean = 0.0; 
+	if(typeof dataMax === "undefined") dataMax = 0.0; 
 	// create a color mapping
 	var colorDomain = createColorArray(dataMean, dataMax); 
 	// create labels for the legend function. 
@@ -151,8 +151,8 @@ function updateView (dataFilterAge, update){
 					.range(colors); 
 
 	var arc = d3.svg.arc()
-		.outerRadius(function(d){if(typeof d.data != 'undefined') return d.data.ringRadius - 10})
-		.innerRadius(function(d){if(typeof d.data != 'undefined')return d.data.ringRadius - 25})
+		.outerRadius(function(d){if(typeof d.data !== 'undefined') return d.data.ringRadius - 10})
+		.innerRadius(function(d){if(typeof d.data !== 'undefined')return d.data.ringRadius - 25})
 		.startAngle(function(d,i){
 			return Math.floor(i/(ringMax+1))*(2*pi)/(dataFilterAge.length/(ringMax+1)); })
 		.endAngle(function(d,i){ 
