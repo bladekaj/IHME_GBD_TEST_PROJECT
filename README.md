@@ -17,3 +17,4 @@ Pan and zoom are available although they are not particularly well tested. Zoom 
 The drop-down allows the user to pick another age group for visualization. The visualization will update automatically.
 
 
+Demo:http://bladekaj.github.io/IHME_GBD_TEST_PROJECT/WebContent/index.html 
